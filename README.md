@@ -37,3 +37,11 @@ User → API Gateway → Auth → Document Service → MinIO + PostgreSQL → Ka
 
 ### Search Flow
 User → API Gateway → Search Service → Redis → Elasticsearch
+
+## Design Decisions
+
+- Kafka used to decouple upload from indexing
+- Elasticsearch used for full-text search & ranking
+- Redis used for cache-aside pattern
+- MinIO used for scalable object storage
+- DLQ implemented to handle poison messages
