@@ -19,7 +19,21 @@ A scalable backend system that allows users to upload documents and perform fast
 - Search Service
 - Kafka, Redis, PostgreSQL, MinIO, Elasticsearch
 
-(Architecture diagrams to be added)
+![HLD](docs/hld.png)
 
 ## Tech Stack
-Java, Spring Boot, Kafka, Elasticsearch, Redis, PostgreSQL, MinIO, Docker
+- Java 17 , Spring Boot
+- PostgreSQL
+- MinIO
+- Kafka
+- ElasticSearch
+- Redis
+- DOcker & Docker Compose
+
+## High Level Flow
+
+### Uplodad flow
+User → API Gateway → Auth → Document Service → MinIO + PostgreSQL → Kafka → Indexing Service → Elasticsearch
+
+### Search Flow
+User → API Gateway → Search Service → Redis → Elasticsearch
