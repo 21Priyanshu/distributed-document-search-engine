@@ -28,7 +28,7 @@ A scalable backend system that allows users to upload documents and perform fast
 - Kafka
 - ElasticSearch
 - Redis
-- DOcker & Docker Compose
+- Docker & Docker Compose
 
 ## High Level Flow
 
