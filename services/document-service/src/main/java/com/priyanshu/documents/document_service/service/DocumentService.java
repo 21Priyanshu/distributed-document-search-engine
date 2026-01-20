@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 
@@ -31,7 +32,7 @@ public class DocumentService {
         this.producer = producer;
     }
 
-    public UUID upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
+    public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
 
     // 1. Upload to MinIO (temporary object name)
     String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
@@ -52,7 +53,12 @@ public class DocumentService {
     // 3. Kafka event
     producer.publishDocumentUploaded(saved.getId().toString());
 
-    return saved.getId();
+    return new UploadDocResponse(
+        saved.getId(),
+        "UPLOADED",
+        "Document uploaded successfully"
+    );
+
     }
 }
 

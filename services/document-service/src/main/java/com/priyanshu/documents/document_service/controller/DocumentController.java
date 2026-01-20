@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.service.DocumentService;
+
+import io.minio.messages.Upload;
 
 @RestController
 @RequestMapping("/documents")
@@ -25,7 +28,7 @@ public class DocumentController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(
+    public ResponseEntity<UploadDocResponse> upload(
             @RequestParam MultipartFile file,
             @RequestParam String title,
             @RequestParam String description,
@@ -34,12 +37,9 @@ public class DocumentController {
 
         List<String> tagList = tags != null ? Arrays.asList(tags.split(",")) : List.of();
 
-        UUID id = service.upload(file, title, description, tagList);
+        UploadDocResponse response = service.upload(file, title, description, tagList);
 
-        return ResponseEntity.ok(Map.of(
-                "documentId", id,
-                "status", "UPLOADED"
-        ));
+        return ResponseEntity.ok(response);
     }
 }
 
