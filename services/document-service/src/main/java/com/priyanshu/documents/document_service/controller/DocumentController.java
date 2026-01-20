@@ -1,11 +1,18 @@
 package com.priyanshu.documents.document_service.controller;
 
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
+import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.service.DocumentService;
 
 import io.minio.messages.Upload;
@@ -41,5 +49,23 @@ public class DocumentController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> download(@PathVariable UUID id) throws Exception {
+
+        Document doc = service.getDocument(id);
+
+        InputStream stream = service.downloadFile(doc.getStoragePath());
+
+        InputStreamResource resource = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(doc.getContentType()))
+                .body(resource);
+    }
+
+
 }
 

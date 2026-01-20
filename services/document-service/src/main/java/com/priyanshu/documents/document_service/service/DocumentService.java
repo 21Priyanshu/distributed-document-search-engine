@@ -1,5 +1,6 @@
 package com.priyanshu.documents.document_service.service;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 
@@ -59,6 +61,20 @@ public class DocumentService {
         "Document uploaded successfully"
     );
 
+    }
+
+    public Document getDocument(UUID documentId) {
+        return repository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+    }
+
+    public InputStream downloadFile(String storagePath) throws Exception {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(storagePath)
+                        .build()
+        );
     }
 }
 
