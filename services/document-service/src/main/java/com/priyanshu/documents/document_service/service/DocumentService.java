@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
+import com.priyanshu.documents.document_service.entity.DocumentStatus;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 
 import io.minio.GetObjectArgs;
@@ -49,6 +50,7 @@ public class DocumentService {
     doc.setFileSize(file.getSize());
     doc.setContentType(file.getContentType());
     doc.setStoragePath(objectName);
+    doc.setStatus(DocumentStatus.UPLOADED);
 
     Document saved = repository.save(doc);   // DB assigns ID
 

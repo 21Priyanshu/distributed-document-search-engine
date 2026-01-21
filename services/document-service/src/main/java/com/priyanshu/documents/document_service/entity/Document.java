@@ -3,7 +3,10 @@ package com.priyanshu.documents.document_service.entity;
 import java.time.Instant;
 import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -15,6 +18,10 @@ public class Document {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DocumentStatus status;
 
     private UUID ownerId;
     private String title;
@@ -98,6 +105,12 @@ public class Document {
         this.createdAt = createdAt;
     }
 
-    
+    public DocumentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DocumentStatus status) {
+        this.status = status;
+    }
 }
 
