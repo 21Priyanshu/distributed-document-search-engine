@@ -2,7 +2,6 @@ package com.priyanshu.documents.document_service.messaging;
 
 import java.util.UUID;
 
-import org.apache.kafka.common.Uuid;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 

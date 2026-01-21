@@ -2,6 +2,7 @@ package com.priyanshu.documents.document_service.controller;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,11 +20,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.DocumentStatusResponse;
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
+import com.priyanshu.documents.document_service.entity.DocumentStatus;
 import com.priyanshu.documents.document_service.service.DocumentService;
-
-import io.minio.messages.Upload;
 
 @RestController
 @RequestMapping("/documents")
@@ -64,6 +65,15 @@ public class DocumentController {
                         "attachment; filename=\"" + doc.getFileName() + "\"")
                 .contentType(MediaType.parseMediaType(doc.getContentType()))
                 .body(resource);
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<DocumentStatusResponse> getStatus(@PathVariable UUID id){
+        DocumentStatus status = service.gDocumentStatus(id);
+
+        DocumentStatusResponse response = new DocumentStatusResponse(id, status);
+
+        return ResponseEntity.ok(response);
     }
 
 

@@ -78,5 +78,12 @@ public class DocumentService {
                         .build()
         );
     }
+
+    public DocumentStatus gDocumentStatus(UUID documentId){
+        Document doc = repository.findById(documentId)
+                        .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        return doc.getStatus();
+    }
 }
 
