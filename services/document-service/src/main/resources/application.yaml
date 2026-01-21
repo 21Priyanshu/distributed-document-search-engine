@@ -24,6 +24,9 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: document-service
+      auto-offset-reset: earliest
 
 minio:
   url: http://localhost:9000
