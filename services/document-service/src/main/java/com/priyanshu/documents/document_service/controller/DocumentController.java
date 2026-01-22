@@ -2,9 +2,7 @@ package com.priyanshu.documents.document_service.controller;
 
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.core.io.InputStreamResource;
@@ -15,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -76,6 +75,13 @@ public class DocumentController {
         return ResponseEntity.ok(response);
     }
 
-
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Void> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam DocumentStatus status
+    ) {
+        service.updateStatus(id, status);
+        return ResponseEntity.noContent().build();
+    }
 }
 

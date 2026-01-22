@@ -16,6 +16,8 @@ import com.priyanshu.documents.document_service.repository.DocumentRepository;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class DocumentService {
@@ -85,5 +87,15 @@ public class DocumentService {
 
         return doc.getStatus();
     }
+
+    @Transactional
+    public void updateStatus(UUID documentId, DocumentStatus status) {
+        int updated = repository.updateStatus(documentId, status);
+
+        if (updated == 0) {
+            throw new EntityNotFoundException("Document not found: " + documentId);
+        }
+    }
+
 }
 
