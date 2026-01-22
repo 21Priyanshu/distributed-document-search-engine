@@ -1,44 +1,65 @@
 package com.priyanshu.index.indexing_service.messaging;
-import java.util.UUID;
-
+import java.io.InputStream;
+import java.time.Instant;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.priyanshu.index.indexing_service.entity.Document;
-import com.priyanshu.index.indexing_service.entity.DocumentStatus;
-import com.priyanshu.index.indexing_service.repository.DocumentRepository;
+import com.priyanshu.index.indexing_service.dto.SearchDocument;
+import com.priyanshu.index.indexing_service.service.DocumentStatusClient;
+import com.priyanshu.index.indexing_service.service.IndexingService;
 
-import jakarta.transaction.Transactional;
 import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Component
 public class DocumentIndexConsumer {
-    private final DocumentRepository repository;
+    private final DocumentStatusClient statusClient;
+    private final IndexingService indexingService;
 
-    public DocumentIndexConsumer(DocumentRepository repository) {
-        this.repository = repository;
+    public DocumentIndexConsumer(DocumentStatusClient statusClient, IndexingService indexingService) {
+        this.statusClient = statusClient;
+        this.indexingService = indexingService;
     }
 
     @KafkaListener(topics = "document_uploaded", groupId = "search-indexer")
-    @Transactional
-    public void handleDocumentUploaded(DocumentUploadedEvent event){
-        UUID id = UUID.fromString(event.documentId());
+    public void consume(DocumentUploadedEvent event) throws Exception {
 
-        Document doc = repository.findById(id).orElseThrow();
+        try {
+            statusClient.updateStatus(event.documentId(), "INDEXING");
 
-        // marks the status as indexing
-        doc.setStatus(DocumentStatus.INDEXING);
+            var stat = indexingService.validateFileContent(event);
 
-        repository.save(doc);
+             if (stat.size() == 0) {
+                statusClient.updateStatus(event.documentId(), "FAILED");
+                return;
+            }
 
-        // simulating indexing
-        try{
-            Thread.sleep(500);
-            doc.setStatus(DocumentStatus.READY);
-        }catch(Exception e){
-            doc.setStatus(DocumentStatus.FAILED);
+            InputStream fileStream = indexingService.fetchFile(event.storagePath());
+
+            String content = indexingService.extractText(fileStream);
+
+            if (content == null || content.trim().isEmpty()) {
+                statusClient.updateStatus(event.documentId(), "FAILED");
+                // log.warn("No extractable content for document {}", event.documentId());
+                return;
+            }
+
+            SearchDocument searchDoc = new SearchDocument(
+                event.documentId(),
+                event.title(),
+                event.description(),
+                content,
+                event.ownerId(),
+                Instant.now().toString()
+            );
+
+            indexingService.indexDocument(event.documentId(), searchDoc);
+
+            statusClient.updateStatus(event.documentId(), "READY");
+
+        } catch (Exception e) {
+            statusClient.updateStatus(event.documentId(), "FAILED");
+            throw e;
         }
-
-        repository.save(doc);
     }
+
 }

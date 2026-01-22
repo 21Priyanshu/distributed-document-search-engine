@@ -1,60 +1,79 @@
 package com.priyanshu.index.indexing_service.service;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
+import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.priyanshu.index.indexing_service.entity.Document;
-import com.priyanshu.index.indexing_service.entity.DocumentStatus;
-import com.priyanshu.index.indexing_service.repository.DocumentRepository;
+import com.priyanshu.index.indexing_service.dto.SearchDocument;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
-import jakarta.transaction.Transactional;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
+import io.minio.errors.InternalException;
+import io.minio.errors.InvalidResponseException;
+import io.minio.errors.ServerException;
+import io.minio.errors.XmlParserException;
 import lombok.RequiredArgsConstructor;
+import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Service
 @RequiredArgsConstructor
 public class IndexingService {
 
-    private final DocumentRepository repository;
     private final MinioClient minioClient;
-    private final ElasticsearchService elasticsearchService;
+    private final ElasticsearchClient client;
 
     @Value("${minio.bucket}")
     private String bucket;
 
-    @Transactional
-    public void indexDocument(UUID documentId) {
-
-        Document doc = repository.findById(documentId)
-                .orElseThrow();
-
+    public StatObjectResponse validateFileContent(DocumentUploadedEvent event){
+        StatObjectResponse stat = null;
         try {
-            doc.setStatus(DocumentStatus.INDEXING);
-            repository.save(doc);
-
-            InputStream stream = minioClient.getObject(
-                GetObjectArgs.builder()
-                    .bucket(bucket)
-                    .object(doc.getStoragePath())
+            stat=  minioClient.statObject(
+                StatObjectArgs.builder()
+                    .bucket("documents")
+                    .object(event.storagePath())
                     .build()
             );
-
-            String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-
-            elasticsearchService.index(doc, content);
-
-            doc.setStatus(DocumentStatus.READY);
-            repository.save(doc);
-
-        } catch (Exception e) {
-            doc.setStatus(DocumentStatus.FAILED);
-            repository.save(doc);
-            throw new RuntimeException(e);
+        } catch (InvalidKeyException | ErrorResponseException | InsufficientDataException | InternalException
+                | InvalidResponseException | NoSuchAlgorithmException | ServerException | XmlParserException
+                | IllegalArgumentException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+
+       return stat;
+    }
+
+    public InputStream fetchFile(String storagePath) throws Exception {
+        return minioClient.getObject(
+            GetObjectArgs.builder()
+                .bucket("documents")
+                .object(storagePath)
+                .build()
+        );
+    }
+
+    public String extractText(InputStream stream) throws Exception {
+        Tika tika = new Tika();
+        return tika.parseToString(stream);
+    }
+
+    public void indexDocument(String documentId, SearchDocument doc) throws IOException {
+
+        client.index(i -> i
+            .index("documents_index")
+            .id(documentId)
+            .document(doc)
+        );
     }
 }
