@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.DocumentUploadedEvent;
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
@@ -39,13 +40,16 @@ public class DocumentService {
 
     public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
 
+    UUID documentId = UUID.randomUUID();
+
     // 1. Upload to MinIO (temporary object name)
-    String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+    String objectName = documentId + "-" + file.getOriginalFilename();
 
    minioClient.putObject( PutObjectArgs.builder() .bucket(bucket) .object(objectName) .stream(file.getInputStream(), file.getSize(), -1) .contentType(file.getContentType()) .build() );
 
     // 2. Save metadata
     Document doc = new Document();
+    doc.setId(documentId);
     doc.setTitle(title);
     doc.setDescription(description);
     doc.setFileName(file.getOriginalFilename());
@@ -54,10 +58,19 @@ public class DocumentService {
     doc.setStoragePath(objectName);
     doc.setStatus(DocumentStatus.UPLOADED);
 
-    Document saved = repository.save(doc);   // DB assigns ID
+    Document saved = repository.save(doc); 
 
     // 3. Kafka event
-    producer.publishDocumentUploaded(saved.getId().toString());
+    DocumentUploadedEvent event = new DocumentUploadedEvent(
+        documentId.toString(),
+        objectName,               // storagePath
+        title,
+        description,
+        "user-123"                // ownerId (from auth later)
+    );
+
+    producer.publishDocumentUploaded(event);
+
 
     return new UploadDocResponse(
         saved.getId(),

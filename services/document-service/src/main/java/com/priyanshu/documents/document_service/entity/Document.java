@@ -16,7 +16,6 @@ import jakarta.persistence.Table;
 public class Document {
 
     @Id
-    @GeneratedValue
     private UUID id;
 
     @Enumerated(EnumType.STRING)
