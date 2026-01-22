@@ -1,4 +1,4 @@
-package com.priyanshu.documents.document_service.dto;
+package main.java.com.priyanshu.documents.common.events;
 
 public record DocumentUploadedEvent(
         String documentId,
@@ -7,4 +7,3 @@ public record DocumentUploadedEvent(
         String description,
         String ownerId
 ) {}
-

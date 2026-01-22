@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.priyanshu.documents.document_service.dto.DocumentUploadedEvent;
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
@@ -19,6 +18,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Service
 public class DocumentService {

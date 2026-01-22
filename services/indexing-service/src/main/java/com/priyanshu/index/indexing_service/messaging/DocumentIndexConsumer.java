@@ -9,6 +9,7 @@ import com.priyanshu.index.indexing_service.entity.DocumentStatus;
 import com.priyanshu.index.indexing_service.repository.DocumentRepository;
 
 import jakarta.transaction.Transactional;
+import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Component
 public class DocumentIndexConsumer {
@@ -20,8 +21,8 @@ public class DocumentIndexConsumer {
 
     @KafkaListener(topics = "document_uploaded", groupId = "search-indexer")
     @Transactional
-    public void handleDocumentUploaded(String documentId){
-        UUID id = UUID.fromString(documentId);
+    public void handleDocumentUploaded(DocumentUploadedEvent event){
+        UUID id = UUID.fromString(event.documentId());
 
         Document doc = repository.findById(id).orElseThrow();
 

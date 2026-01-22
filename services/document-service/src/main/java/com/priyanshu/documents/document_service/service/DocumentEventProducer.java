@@ -3,7 +3,8 @@ package com.priyanshu.documents.document_service.service;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.priyanshu.documents.document_service.dto.DocumentUploadedEvent;
+import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
+
 
 @Service
 public class DocumentEventProducer {
