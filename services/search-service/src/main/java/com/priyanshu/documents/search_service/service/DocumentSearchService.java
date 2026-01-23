@@ -25,7 +25,7 @@ public class DocumentSearchService {
         int from = page * size;
 
         var response = client.search(s -> s
-                        .index("documents_index")
+                        .index("documents_index_v2")
                         .from(from)
                         .size(size)
                         .query(q -> q

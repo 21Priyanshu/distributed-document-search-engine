@@ -71,7 +71,7 @@ public class IndexingService {
     public void indexDocument(String documentId, SearchDocument doc) throws IOException {
 
         client.index(i -> i
-            .index("documents_index")
+            .index("documents_index_v2")
             .id(documentId)
             .document(doc)
         );

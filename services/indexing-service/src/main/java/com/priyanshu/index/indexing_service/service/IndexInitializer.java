@@ -1,5 +1,7 @@
 package com.priyanshu.index.indexing_service.service;
 
+import java.io.StringReader;
+
 import org.springframework.stereotype.Component;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -17,24 +19,17 @@ public class IndexInitializer {
     @PostConstruct
     public void createIndex() throws Exception {
 
-        String indexName = "documents_index";
+        String indexName = "documents_index_v2";
 
         boolean exists = client.indices().exists(e -> e.index(indexName)).value();
         if (exists) return;
 
         client.indices().create(c -> c
             .index(indexName)
-            .mappings(m -> m
-                .properties("title", p -> p.text(t -> t))
-                .properties("description", p -> p.text(t -> t))
-                .properties("content", p -> p.text(t -> t))
-                .properties("ownerId", p -> p.keyword(k -> k))
-                .properties("tags", p -> p.keyword(k -> k))
-                .properties("createdAt", p -> p.date(d -> d))
-            )
+            .withJson(new StringReader(Constants.INDEX_MAPPING_JSON))
         );
 
-        System.out.println("Elasticsearch index created");
+        System.out.println("documents_index_v2 created");
     }
 }
 
