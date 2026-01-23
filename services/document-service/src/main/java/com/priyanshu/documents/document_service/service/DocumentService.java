@@ -18,7 +18,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
+import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Service
 public class DocumentService {

@@ -1,4 +1,4 @@
-package main.java.com.priyanshu.documents.common.events;
+package com.priyanshu.documents.common.events;
 
 public record DocumentUploadedEvent(
         String documentId,

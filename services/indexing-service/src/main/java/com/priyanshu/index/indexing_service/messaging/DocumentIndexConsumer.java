@@ -8,7 +8,7 @@ import com.priyanshu.index.indexing_service.dto.SearchDocument;
 import com.priyanshu.index.indexing_service.service.DocumentStatusClient;
 import com.priyanshu.index.indexing_service.service.IndexingService;
 
-import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
+import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Component
 public class DocumentIndexConsumer {

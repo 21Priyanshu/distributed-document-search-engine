@@ -23,7 +23,7 @@ import io.minio.errors.InvalidResponseException;
 import io.minio.errors.ServerException;
 import io.minio.errors.XmlParserException;
 import lombok.RequiredArgsConstructor;
-import main.java.com.priyanshu.documents.common.events.DocumentUploadedEvent;
+import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Service
 @RequiredArgsConstructor
