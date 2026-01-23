@@ -15,6 +15,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/health").permitAll()
             .requestMatchers("/documents/upload").permitAll()
+            .requestMatchers("/documents/*/download").permitAll()
+            .requestMatchers("/documents/*/status").permitAll()
             .anyRequest().authenticated()
         );
 

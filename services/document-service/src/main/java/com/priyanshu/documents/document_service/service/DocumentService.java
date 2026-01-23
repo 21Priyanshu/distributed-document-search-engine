@@ -1,5 +1,6 @@
 package com.priyanshu.documents.document_service.service;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,11 +8,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
+import com.priyanshu.documents.document_service.entity.DocumentStatus;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 
 @Service
 public class DocumentService {
@@ -31,28 +38,77 @@ public class DocumentService {
         this.producer = producer;
     }
 
-    public UUID upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
+    public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
+
+    UUID documentId = UUID.randomUUID();
 
     // 1. Upload to MinIO (temporary object name)
-    String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+    String objectName = documentId + "-" + file.getOriginalFilename();
 
    minioClient.putObject( PutObjectArgs.builder() .bucket(bucket) .object(objectName) .stream(file.getInputStream(), file.getSize(), -1) .contentType(file.getContentType()) .build() );
 
     // 2. Save metadata
     Document doc = new Document();
+    doc.setId(documentId);
     doc.setTitle(title);
     doc.setDescription(description);
     doc.setFileName(file.getOriginalFilename());
     doc.setFileSize(file.getSize());
     doc.setContentType(file.getContentType());
     doc.setStoragePath(objectName);
+    doc.setStatus(DocumentStatus.UPLOADED);
 
-    Document saved = repository.save(doc);   // DB assigns ID
+    Document saved = repository.save(doc); 
 
     // 3. Kafka event
-    producer.publishDocumentUploaded(saved.getId().toString());
+    DocumentUploadedEvent event = new DocumentUploadedEvent(
+        documentId.toString(),
+        objectName,               // storagePath
+        title,
+        description,
+        "user-123"                // ownerId (from auth later)
+    );
 
-    return saved.getId();
+    producer.publishDocumentUploaded(event);
+
+
+    return new UploadDocResponse(
+        saved.getId(),
+        "UPLOADED",
+        "Document uploaded successfully"
+    );
+
     }
+
+    public Document getDocument(UUID documentId) {
+        return repository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+    }
+
+    public InputStream downloadFile(String storagePath) throws Exception {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(storagePath)
+                        .build()
+        );
+    }
+
+    public DocumentStatus gDocumentStatus(UUID documentId){
+        Document doc = repository.findById(documentId)
+                        .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        return doc.getStatus();
+    }
+
+    @Transactional
+    public void updateStatus(UUID documentId, DocumentStatus status) {
+        int updated = repository.updateStatus(documentId, status);
+
+        if (updated == 0) {
+            throw new EntityNotFoundException("Document not found: " + documentId);
+        }
+    }
+
 }
 
