@@ -38,7 +38,7 @@ public class DocumentService {
         this.producer = producer;
     }
 
-    public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags) throws Exception {
+    public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags, String userId) throws Exception {
 
     UUID documentId = UUID.randomUUID();
 
@@ -57,6 +57,7 @@ public class DocumentService {
     doc.setContentType(file.getContentType());
     doc.setStoragePath(objectName);
     doc.setStatus(DocumentStatus.UPLOADED);
+    doc.setOwnerId(userId);
 
     Document saved = repository.save(doc); 
 
@@ -66,7 +67,7 @@ public class DocumentService {
         objectName,               // storagePath
         title,
         description,
-        "user-123"                // ownerId (from auth later)
+        userId             // ownerId (from auth later)
     );
 
     producer.publishDocumentUploaded(event);
@@ -80,8 +81,8 @@ public class DocumentService {
 
     }
 
-    public Document getDocument(UUID documentId) {
-        return repository.findById(documentId)
+    public Document getDocument(UUID documentId, String userId) {
+        return repository.findByIdAndOwnerId(documentId, userId)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
     }
 
@@ -94,15 +95,16 @@ public class DocumentService {
         );
     }
 
-    public DocumentStatus gDocumentStatus(UUID documentId){
-        Document doc = repository.findById(documentId)
-                        .orElseThrow(() -> new RuntimeException("Document not found"));
+    public DocumentStatus getDocumentStatus(UUID documentId, String userId){
+
+        Document doc = repository.findByIdAndOwnerId(documentId, userId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
 
         return doc.getStatus();
     }
 
     @Transactional
-    public void updateStatus(UUID documentId, DocumentStatus status) {
+    public void updateStatus(UUID documentId, DocumentStatus status, String userId) {
         int updated = repository.updateStatus(documentId, status);
 
         if (updated == 0) {

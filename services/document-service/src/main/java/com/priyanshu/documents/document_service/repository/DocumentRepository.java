@@ -1,5 +1,6 @@
 package com.priyanshu.documents.document_service.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,5 +19,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     @Modifying
     @Query("update Document d set d.status = :status where d.id = :id")
     int updateStatus(UUID id, DocumentStatus status);
-}
 
+    // New methods for ownerId-based queries
+    Optional<Document> findByIdAndOwnerId(UUID id, String ownerId);
+    List<Document> findAllByOwnerId(String ownerId);
+}

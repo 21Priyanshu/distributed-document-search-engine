@@ -2,6 +2,7 @@ package com.priyanshu.documents.search_service.controller;
 
 import java.io.IOException;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,10 +25,13 @@ public class SearchController {
     public SearchResponse search(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth
     ) throws IOException {
 
-        return searchService.search(q, page, size);
+        String userId = auth.getName();
+
+        return searchService.search(q, page, size, userId);
     }
 }
 

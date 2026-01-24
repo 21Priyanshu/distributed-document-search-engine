@@ -3,6 +3,7 @@ package com.priyanshu.documents.document_service.controller;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.core.io.InputStreamResource;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +27,7 @@ import com.priyanshu.documents.document_service.dto.DocumentStatusResponse;
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
+import com.priyanshu.documents.document_service.repository.DocumentRepository;
 import com.priyanshu.documents.document_service.service.DocumentService;
 
 @RestController
@@ -32,9 +35,11 @@ import com.priyanshu.documents.document_service.service.DocumentService;
 public class DocumentController {
 
     private final DocumentService service;
+    private final DocumentRepository repository;
 
-    public DocumentController(DocumentService service) {
+    public DocumentController(DocumentService service, DocumentRepository repository) {
         this.service = service;
+        this.repository = repository;
     }
 
     @PostMapping("/upload")
@@ -42,8 +47,11 @@ public class DocumentController {
             @RequestParam MultipartFile file,
             @RequestParam String title,
             @RequestParam String description,
-            @RequestParam(required = false) String tags
+            @RequestParam(required = false) String tags,
+            Authentication auth
     ) throws Exception {
+
+        String userId = auth.getName();
 
         List<String> tagList = tags != null ? Arrays.asList(tags.split(",")) : List.of();
 
@@ -52,15 +60,17 @@ public class DocumentController {
         }
 
 
-        UploadDocResponse response = service.upload(file, title, description, tagList);
+        UploadDocResponse response = service.upload(file, title, description, tagList, userId);
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> download(@PathVariable UUID id) throws Exception {
+    public ResponseEntity<Resource> download(@PathVariable UUID id, Authentication auth) throws Exception {
 
-        Document doc = service.getDocument(id);
+        String userId = auth.getName();
+
+        Document doc = service.getDocument(id, userId);
 
         InputStream stream = service.downloadFile(doc.getStoragePath());
 
@@ -74,8 +84,16 @@ public class DocumentController {
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<DocumentStatusResponse> getStatus(@PathVariable UUID id){
-        DocumentStatus status = service.gDocumentStatus(id);
+    public ResponseEntity<DocumentStatusResponse> getStatus(@PathVariable UUID id, Authentication auth) {
+        System.out.print("Auth: "+ auth);
+        String userId = auth.getName();
+
+
+        
+
+        System.out.println("Fetching status for document ID: " + id + " and user ID: " + userId);
+
+        DocumentStatus status = service.getDocumentStatus(id, userId);
 
         DocumentStatusResponse response = new DocumentStatusResponse(id, status);
 
@@ -85,10 +103,18 @@ public class DocumentController {
     @PutMapping("/{id}/status")
     public ResponseEntity<Void> updateStatus(
             @PathVariable UUID id,
-            @RequestParam DocumentStatus status
+            @RequestParam DocumentStatus status,
+            Authentication auth
     ) {
-        service.updateStatus(id, status);
+        String userId = auth.getName();
+        service.updateStatus(id, status, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/documents/{id}")
+    public Optional<Document> get(@PathVariable UUID id, Authentication auth) {
+        String userId = auth.getName();
+        return repository.findByIdAndOwnerId(id, userId);
     }
 }
 
