@@ -50,7 +50,7 @@ public class DocumentController {
             @RequestParam(required = false) String tags,
             Authentication auth
     ) throws Exception {
-
+        System.out.print("Auth: "+ auth);
         String userId = auth.getName();
 
         List<String> tagList = tags != null ? Arrays.asList(tags.split(",")) : List.of();

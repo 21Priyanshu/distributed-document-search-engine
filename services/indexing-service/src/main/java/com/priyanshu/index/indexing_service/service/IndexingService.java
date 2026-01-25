@@ -2,8 +2,10 @@ package com.priyanshu.index.indexing_service.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
 import com.priyanshu.index.indexing_service.dto.SearchDocument;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.StatObjectArgs;
@@ -28,6 +32,8 @@ import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 @Service
 @RequiredArgsConstructor
 public class IndexingService {
+
+     private final String secret = "my-super-secret-key-32-bytes-min";
 
     private final MinioClient minioClient;
     private final ElasticsearchClient client;
@@ -75,5 +81,16 @@ public class IndexingService {
             .id(documentId)
             .document(doc)
         );
+    }
+
+    public String generateServiceToken() {
+
+        return Jwts.builder()
+            .setSubject("indexing-service")
+            .claim("type", "service")
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + 86400000))
+            .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+            .compact();
     }
 }

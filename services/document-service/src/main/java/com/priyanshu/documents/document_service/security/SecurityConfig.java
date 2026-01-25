@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/documents/upload").permitAll()
                 .requestMatchers("/documents/*/download").permitAll()
-                .requestMatchers("/documents/*/status").permitAll()
+                .requestMatchers("/documents/*/status").hasAnyAuthority("USER", "SERVICE")
                 .requestMatchers("/auth/**").permitAll()
                 .anyRequest().authenticated()
             )

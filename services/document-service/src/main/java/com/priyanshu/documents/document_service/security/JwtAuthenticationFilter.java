@@ -1,59 +1,71 @@
 package com.priyanshu.documents.document_service.security;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter{
-    private final JwtService jwtService;
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
+    private final String secret = "my-super-secret-key-32-bytes-min"; // move to application.yml
 
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
         
-        System.out.println("JWT FILTER HIT: " + request.getRequestURI());
-
         String header = request.getHeader("Authorization");
-
-        System.out.println("Authorization Header: " + header);
-
+        System.out.println("JWT Header: " + header);
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
-            //get the token value
-            String token = header.substring(7);
 
-            //  if valid token 
-            if (jwtService.isTokenValid(token)) {
-                String userId = jwtService.extractUserId(token);
-                // Set authentication in the security context if needed
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userId, null, List.of());
+        String token = header.substring(7);
 
-                System.out.println("Token valid = " + jwtService.isTokenValid(token));
-        
+        try {
+            Claims claims = Jwts.parserBuilder()
+                                .setSigningKey(secret.getBytes(StandardCharsets.UTF_8))
+                                .build()
+                                .parseClaimsJws(token)
+                                .getBody();
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            String subject = claims.getSubject(); // userId OR service name
+            String type = claims.get("type", String.class); // "user" or "service"
+
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+            if ("service".equals(type)) {
+                authorities.add(new SimpleGrantedAuthority("SERVICE"));
+            } else {
+                authorities.add(new SimpleGrantedAuthority("USER"));
             }
 
-            try {
-                filterChain.doFilter(request, response);
-            } catch (IOException | ServletException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(subject, null, authorities);
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
         }
+
+        filterChain.doFilter(request, response);
+    }
 }
