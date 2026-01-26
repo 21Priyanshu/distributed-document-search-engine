@@ -107,7 +107,9 @@ public class DocumentController {
             Authentication auth
     ) {
         String userId = auth.getName();
-        service.updateStatus(id, status, userId);
+        boolean isService = auth.getAuthorities().stream()
+                .anyMatch(authority -> "SERVICE".equals(authority.getAuthority()));
+        service.updateStatus(id, status, userId, isService);
         return ResponseEntity.noContent().build();
     }
 

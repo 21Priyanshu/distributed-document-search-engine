@@ -10,6 +10,10 @@ import org.springframework.web.client.RestTemplate;
 public class DocumentStatusClient {
 
     private IndexingService indexingService;
+
+    public DocumentStatusClient(IndexingService indexingService) {
+        this.indexingService = indexingService;
+    }
     private final RestTemplate restTemplate = new RestTemplate();
 
     public void updateStatus(String documentId, String status) {

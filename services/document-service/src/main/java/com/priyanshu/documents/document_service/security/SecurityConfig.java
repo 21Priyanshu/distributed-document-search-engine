@@ -23,8 +23,8 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health").permitAll()
-                .requestMatchers("/documents/upload").permitAll()
-                .requestMatchers("/documents/*/download").permitAll()
+                .requestMatchers("/documents/upload").authenticated()
+                .requestMatchers("/documents/*/download").authenticated()
                 .requestMatchers("/documents/*/status").hasAnyAuthority("USER", "SERVICE")
                 .requestMatchers("/auth/**").permitAll()
                 .anyRequest().authenticated()

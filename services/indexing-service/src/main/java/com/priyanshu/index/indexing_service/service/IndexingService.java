@@ -33,7 +33,7 @@ import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 @RequiredArgsConstructor
 public class IndexingService {
 
-     private final String secret = "my-super-secret-key-32-bytes-min";
+     private final String secret = "dummuy_secret_key_for_jwt_signing_purposes_only";
 
     private final MinioClient minioClient;
     private final ElasticsearchClient client;

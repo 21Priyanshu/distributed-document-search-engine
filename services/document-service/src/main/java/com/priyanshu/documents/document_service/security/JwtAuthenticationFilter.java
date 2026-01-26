@@ -21,7 +21,7 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String secret = "my-super-secret-key-32-bytes-min"; // move to application.yml
+    private final String secret = "dummuy_secret_key_for_jwt_signing_purposes_only"; // move to application.yml
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

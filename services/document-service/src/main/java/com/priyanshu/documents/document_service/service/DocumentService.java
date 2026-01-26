@@ -104,7 +104,13 @@ public class DocumentService {
     }
 
     @Transactional
-    public void updateStatus(UUID documentId, DocumentStatus status, String userId) {
+    public void updateStatus(UUID documentId, DocumentStatus status, String userId, boolean isService) {
+        if (!isService) {
+            // For user calls, verify ownership
+            Document doc = repository.findByIdAndOwnerId(documentId, userId)
+                    .orElseThrow(() -> new EntityNotFoundException("Document not found or access denied: " + documentId));
+        }
+
         int updated = repository.updateStatus(documentId, status);
 
         if (updated == 0) {
