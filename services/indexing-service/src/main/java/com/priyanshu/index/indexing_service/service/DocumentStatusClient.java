@@ -4,9 +4,13 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class DocumentStatusClient {
 
     private IndexingService indexingService;
@@ -19,13 +23,18 @@ public class DocumentStatusClient {
     public void updateStatus(String documentId, String status) {
         String url = "http://localhost:8081/documents/" + documentId + "/status?status=" + status;
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(indexingService.generateServiceToken());
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(indexingService.generateServiceToken());
 
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        restTemplate.exchange(url, HttpMethod.PUT, entity, Void.class);
-
+            restTemplate.exchange(url, HttpMethod.PUT, entity, Void.class);
+            log.info("Updated status for document {} to {}", documentId, status);
+        } catch (RestClientException e) {
+            log.error("Failed to update status for document {} to {}: {}", documentId, status, e.getMessage(), e);
+            throw new RuntimeException("Status update failed for document " + documentId, e);
+        }
     }
 }
 
