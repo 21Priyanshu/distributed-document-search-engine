@@ -6,13 +6,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,18 +23,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.priyanshu.documents.document_service.dto.DocumentStatusResponse;
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
+import com.priyanshu.documents.document_service.exception.DocumentServiceException;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 import com.priyanshu.documents.document_service.service.DocumentService;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 @RestController
 @RequestMapping("/documents")
+@Validated
 public class DocumentController {
+
+    private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);
 
     private final DocumentService service;
     private final DocumentRepository repository;
@@ -44,60 +53,81 @@ public class DocumentController {
 
     @PostMapping("/upload")
     public ResponseEntity<UploadDocResponse> upload(
-            @RequestParam MultipartFile file,
-            @RequestParam String title,
-            @RequestParam String description,
+            @RequestParam @NotNull MultipartFile file,
+            @RequestParam @NotBlank @Size(max = 255) String title,
+            @RequestParam @NotBlank @Size(max = 1000) String description,
             @RequestParam(required = false) String tags,
             Authentication auth
-    ) throws Exception {
-        System.out.print("Auth: "+ auth);
+    ) {
         String userId = auth.getName();
+        logger.info("Document upload request by user: {}, file: {}, size: {} bytes",
+                   userId, file.getOriginalFilename(), file.getSize());
 
-        List<String> tagList = tags != null ? Arrays.asList(tags.split(",")) : List.of();
+        try {
+            List<String> tagList = tags != null ? Arrays.asList(tags.split(",")) : List.of();
 
-        if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Empty file");
+            if (file.isEmpty()) {
+                logger.warn("Empty file upload attempt by user: {}", userId);
+                throw new DocumentServiceException("File cannot be empty");
+            }
+
+            if (file.getSize() > 50 * 1024 * 1024) { // 50MB limit
+                logger.warn("File size exceeded by user: {}, size: {} bytes", userId, file.getSize());
+                throw new DocumentServiceException("File size exceeds maximum allowed limit of 50MB");
+            }
+
+            UploadDocResponse response = service.upload(file, title, description, tagList, userId);
+            logger.info("Document uploaded successfully: {} by user: {}", response.getDocumentId(), userId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Failed to upload document for user: {}", userId, e);
+            throw new DocumentServiceException("Failed to upload document: " + e.getMessage(), e);
         }
-
-
-        UploadDocResponse response = service.upload(file, title, description, tagList, userId);
-
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> download(@PathVariable UUID id, Authentication auth) throws Exception {
-
+    public ResponseEntity<Resource> download(@PathVariable UUID id, Authentication auth) {
         String userId = auth.getName();
+        logger.info("Document download request: {} by user: {}", id, userId);
 
-        Document doc = service.getDocument(id, userId);
+        try {
+            Document doc = service.getDocument(id, userId);
+            InputStream stream = service.downloadFile(doc.getStoragePath());
 
-        InputStream stream = service.downloadFile(doc.getStoragePath());
+            InputStreamResource resource = new InputStreamResource(stream);
 
-        InputStreamResource resource = new InputStreamResource(stream);
+            logger.info("Document downloaded successfully: {} by user: {}", id, userId);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + doc.getFileName() + "\"")
-                .contentType(MediaType.parseMediaType(doc.getContentType()))
-                .body(resource);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + doc.getFileName() + "\"")
+                    .contentType(MediaType.parseMediaType(doc.getContentType()))
+                    .body(resource);
+
+        } catch (Exception e) {
+            logger.error("Failed to download document: {} for user: {}", id, userId, e);
+            throw new DocumentServiceException("Failed to download document: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/{id}/status")
     public ResponseEntity<DocumentStatusResponse> getStatus(@PathVariable UUID id, Authentication auth) {
-        System.out.print("Auth: "+ auth);
         String userId = auth.getName();
+        logger.debug("Status request for document: {} by user: {}", id, userId);
 
+        try {
+            DocumentStatus status = service.getDocumentStatus(id, userId);
+            DocumentStatusResponse response = new DocumentStatusResponse(id, status);
 
-        
+            logger.debug("Status retrieved for document: {} - status: {}", id, status);
+            return ResponseEntity.ok(response);
 
-        System.out.println("Fetching status for document ID: " + id + " and user ID: " + userId);
-
-        DocumentStatus status = service.getDocumentStatus(id, userId);
-
-        DocumentStatusResponse response = new DocumentStatusResponse(id, status);
-
-        return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Failed to get status for document: {} by user: {}", id, userId, e);
+            throw e; // Let global exception handler deal with it
+        }
     }
 
     @PutMapping("/{id}/status")
@@ -109,14 +139,40 @@ public class DocumentController {
         String userId = auth.getName();
         boolean isService = auth.getAuthorities().stream()
                 .anyMatch(authority -> "SERVICE".equals(authority.getAuthority()));
-        service.updateStatus(id, status, userId, isService);
-        return ResponseEntity.noContent().build();
+
+        logger.info("Status update request for document: {} to status: {} by user: {} (service: {})",
+                   id, status, userId, isService);
+
+        try {
+            service.updateStatus(id, status, userId, isService);
+            logger.info("Status updated successfully for document: {} to {}", id, status);
+
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            logger.error("Failed to update status for document: {} by user: {}", id, userId, e);
+            throw e; // Let global exception handler deal with it
+        }
     }
 
     @GetMapping("/documents/{id}")
     public Optional<Document> get(@PathVariable UUID id, Authentication auth) {
         String userId = auth.getName();
-        return repository.findByIdAndOwnerId(id, userId);
+        logger.debug("Document retrieval request: {} by user: {}", id, userId);
+
+        try {
+            Optional<Document> document = repository.findByIdAndOwnerId(id, userId);
+            if (document.isPresent()) {
+                logger.debug("Document found: {} for user: {}", id, userId);
+            } else {
+                logger.warn("Document not found: {} for user: {}", id, userId);
+            }
+            return document;
+
+        } catch (Exception e) {
+            logger.error("Failed to retrieve document: {} for user: {}", id, userId, e);
+            throw new DocumentServiceException("Failed to retrieve document: " + e.getMessage(), e);
+        }
     }
 }
 
