@@ -2,6 +2,8 @@ package com.priyanshu.documents.search_service.config;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,20 +18,35 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 
 @Configuration
 public class ElasticSearchConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchConfig.class);
+
      @Bean
     public ElasticsearchClient elasticsearchClient() {
+        logger.info("Initializing Elasticsearch client connection to localhost:9200");
 
-        ObjectMapper objectMapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
+        try {
+            ObjectMapper objectMapper = JsonMapper.builder()
+                    .addModule(new JavaTimeModule())
+                    .build();
 
-        RestClient restClient = RestClient.builder(
-                new HttpHost("localhost", 9200)
-        ).build();
+            RestClient restClient = RestClient.builder(
+                    new HttpHost("localhost", 9200)
+            ).build();
 
-        ElasticsearchTransport transport =
-                new RestClientTransport(restClient, new JacksonJsonpMapper(objectMapper));
+            ElasticsearchTransport transport =
+                    new RestClientTransport(restClient, new JacksonJsonpMapper(objectMapper));
 
-        return new ElasticsearchClient(transport);
+            ElasticsearchClient client = new ElasticsearchClient(transport);
+
+            // Test the connection
+            client.info();
+            logger.info("Elasticsearch client initialized successfully");
+
+            return client;
+        } catch (Exception e) {
+            logger.error("Failed to initialize Elasticsearch client: {}", e.getMessage(), e);
+            throw new RuntimeException("Elasticsearch client initialization failed", e);
+        }
     }
 }
