@@ -1,11 +1,15 @@
 package com.priyanshu.index.indexing_service.service;
 
+import java.io.StringReader;
+
 import org.springframework.stereotype.Component;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class IndexInitializer {
 
     private final ElasticsearchClient client;
@@ -15,26 +19,26 @@ public class IndexInitializer {
     }
 
     @PostConstruct
-    public void createIndex() throws Exception {
+    public void createIndex() {
+        String indexName = "documents_index_v2";
 
-        String indexName = "documents_index";
+        try {
+            boolean exists = client.indices().exists(e -> e.index(indexName)).value();
+            if (exists) {
+                log.info("Index {} already exists", indexName);
+                return;
+            }
 
-        boolean exists = client.indices().exists(e -> e.index(indexName)).value();
-        if (exists) return;
+            client.indices().create(c -> c
+                .index(indexName)
+                .withJson(new StringReader(Constants.INDEX_MAPPING_JSON))
+            );
 
-        client.indices().create(c -> c
-            .index(indexName)
-            .mappings(m -> m
-                .properties("title", p -> p.text(t -> t))
-                .properties("description", p -> p.text(t -> t))
-                .properties("content", p -> p.text(t -> t))
-                .properties("ownerId", p -> p.keyword(k -> k))
-                .properties("tags", p -> p.keyword(k -> k))
-                .properties("createdAt", p -> p.date(d -> d))
-            )
-        );
-
-        System.out.println("Elasticsearch index created");
+            log.info("Index {} created successfully", indexName);
+        } catch (Exception e) {
+            log.error("Failed to create index {}: {}", indexName, e.getMessage(), e);
+            throw new RuntimeException("Index initialization failed", e);
+        }
     }
 }
 

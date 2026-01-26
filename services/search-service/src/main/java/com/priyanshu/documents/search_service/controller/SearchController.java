@@ -2,6 +2,9 @@ package com.priyanshu.documents.search_service.controller;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +17,8 @@ import com.priyanshu.documents.search_service.service.DocumentSearchService;
 @RequestMapping("/search")
 public class SearchController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SearchController.class);
+
     private final DocumentSearchService searchService;
 
     public SearchController(DocumentSearchService searchService) {
@@ -24,10 +29,28 @@ public class SearchController {
     public SearchResponse search(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth
     ) throws IOException {
+        String userId = auth.getName();
 
-        return searchService.search(q, page, size);
+        logger.info("Search request received - query: '{}', page: {}, size: {}, userId: {}", q, page, size, userId);
+
+        long startTime = System.currentTimeMillis();
+        try {
+            SearchResponse response = searchService.search(q, page, size, userId);
+            long duration = System.currentTimeMillis() - startTime;
+
+            logger.info("Search completed successfully - query: '{}', results: {}, duration: {}ms",
+                       q, response, duration);
+
+            return response;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            logger.error("Search failed - query: '{}', userId: {}, duration: {}ms, error: {}",
+                        q, userId, duration, e.getMessage(), e);
+            throw e;
+        }
     }
 }
 

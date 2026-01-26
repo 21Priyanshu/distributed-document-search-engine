@@ -22,7 +22,7 @@ public class Document {
     @Column(nullable = false)
     private DocumentStatus status;
 
-    private UUID ownerId;
+    private String ownerId;
     private String title;
     private String description;
     private String fileName;
@@ -40,11 +40,11 @@ public class Document {
         this.id = id;
     }
 
-    public UUID getOwnerId() {
+    public String getOwnerId() {
         return ownerId;
     }
 
-    public void setOwnerId(UUID ownerId) {
+    public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
     }
 

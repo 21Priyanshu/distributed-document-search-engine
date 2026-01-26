@@ -1,3 +1,18 @@
 spring:
   application:
     name: search-service
+
+logging:
+  level:
+    com.priyanshu.documents.search_service: INFO
+    org.springframework.security: WARN
+    co.elastic.clients: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/search-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
