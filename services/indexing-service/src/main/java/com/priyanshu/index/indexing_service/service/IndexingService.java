@@ -35,7 +35,7 @@ import com.priyanshu.documents.common.events.DocumentUploadedEvent;
 @Slf4j
 public class IndexingService {
 
-     private final String secret = "dummuy_secret_key_for_jwt_signing_purposes_only";
+    private final String secret = "dummuy_secret_key_for_jwt_signing_purposes_only";
 
     private final MinioClient minioClient;
     private final ElasticsearchClient client;

@@ -88,7 +88,8 @@ public class DocumentService {
                 objectName,
                 title,
                 description,
-                userId
+                userId,
+                0
             );
 
             producer.publishDocumentUploaded(event);
