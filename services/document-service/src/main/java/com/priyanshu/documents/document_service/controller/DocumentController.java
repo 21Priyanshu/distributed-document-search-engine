@@ -1,6 +1,7 @@
 package com.priyanshu.documents.document_service.controller;
 
 import java.io.InputStream;
+import java.nio.file.AccessDeniedException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -186,6 +188,18 @@ public class DocumentController {
             logger.error("Failed to retrieve document: {} for user: {}", id, userId, e);
             throw new DocumentServiceException("Failed to retrieve document: " + e.getMessage(), e);
         }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDocument(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) throws AccessDeniedException {
+        String userId = authentication.getName();
+
+        service.deleteDocument(id, userId);
+
+        return ResponseEntity.noContent().build();
     }
 }
 

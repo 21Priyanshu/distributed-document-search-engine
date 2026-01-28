@@ -25,8 +25,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.use.type.headers: false
-        spring.json.value.default.type: com.priyanshu.documents.common.events.DocumentUploadedEvent
+        spring.json.use.type.headers: true
     listener:
       ack-mode: manual
 

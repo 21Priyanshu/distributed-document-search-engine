@@ -1,6 +1,7 @@
 package com.priyanshu.documents.document_service.service;
 
 import java.io.InputStream;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,17 +13,18 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
 import com.priyanshu.documents.document_service.entity.UploadRequest;
 import com.priyanshu.documents.document_service.exception.DocumentServiceException;
+import com.priyanshu.documents.document_service.exception.NotFoundException;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
 import com.priyanshu.documents.document_service.repository.UploadRequestRepository;
 
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.errors.MinioException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -188,7 +190,7 @@ public class DocumentService {
             if (!isService) {
                 // For user calls, verify ownership
                 logger.debug("Verifying ownership for document: {} by user: {}", documentId, userId);
-                Document doc = repository.findByIdAndOwnerId(documentId, userId)
+                repository.findByIdAndOwnerId(documentId, userId)
                         .orElseThrow(() -> {
                             logger.warn("Document not found or access denied for status update: {} by user: {}", documentId, userId);
                             return new EntityNotFoundException("Document not found or access denied: " + documentId);
@@ -210,6 +212,38 @@ public class DocumentService {
             logger.error("Unexpected error during status update for document: {}", documentId, e);
             throw new DocumentServiceException("Failed to update document status: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public void deleteDocument(UUID documentId, String userId) throws AccessDeniedException {
+
+        Document doc = repository.findById(documentId)
+            .orElseThrow(() -> new NotFoundException("Document not found"));
+
+        if (!doc.getOwnerId().equals(userId)) {
+            throw new AccessDeniedException("Not owner of document");
+        }
+
+        String storagePath = doc.getStoragePath();
+
+        // 1. Delete DB first
+        repository.delete(doc);
+
+        // 2. Delete from MinIO
+        try {
+            minioClient.removeObject(
+                RemoveObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(storagePath)
+                    .build()
+            );
+        } catch (Exception e) {
+            logger.error("MinIO delete failed for {}", documentId, e);
+            // optional: retry or mark orphan
+        }
+
+        // 3. Publish Kafka event
+        producer.publishDocumentDeleted(documentId.toString());
     }
 }
 
