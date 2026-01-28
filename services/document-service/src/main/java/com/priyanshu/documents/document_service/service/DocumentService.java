@@ -2,19 +2,23 @@ package com.priyanshu.documents.document_service.service;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.priyanshu.documents.document_service.dto.UploadDocResponse;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
+import com.priyanshu.documents.document_service.entity.UploadRequest;
 import com.priyanshu.documents.document_service.exception.DocumentServiceException;
 import com.priyanshu.documents.document_service.repository.DocumentRepository;
+import com.priyanshu.documents.document_service.repository.UploadRequestRepository;
 
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
@@ -32,27 +36,42 @@ public class DocumentService {
     private final DocumentRepository repository;
     private final MinioClient minioClient;
     private final DocumentEventProducer producer;
+    private final UploadRequestRepository uploadRequestRepository;
 
     @Value("${minio.bucket}")
     private String bucket;
 
     public DocumentService(DocumentRepository repository,
                            MinioClient minioClient,
-                           DocumentEventProducer producer) {
+                           DocumentEventProducer producer,
+                           UploadRequestRepository uploadRequestRepository) {
         this.repository = repository;
         this.minioClient = minioClient;
         this.producer = producer;
+        this.uploadRequestRepository = uploadRequestRepository;
     }
 
     @Transactional
-    public UploadDocResponse upload(MultipartFile file, String title, String description, List<String> tags, String userId) {
+    public UUID upload(String idempotencyKey,MultipartFile file, String title, String description, List<String> tags, String userId) {
         logger.info("Starting document upload for user: {}, file: {}, size: {} bytes",
                    userId, file.getOriginalFilename(), file.getSize());
+
+        Optional<UploadRequest> existing =  uploadRequestRepository.findById(idempotencyKey);
+
+        if (existing.isPresent()) {
+            logger.info("Idempotent upload detected for key: {}, returning existing document ID: {}",
+                        idempotencyKey, existing.get().getDocumentId());
+            return existing.get().getDocumentId();
+        }
 
         UUID documentId = UUID.randomUUID();
         String objectName = documentId + "-" + file.getOriginalFilename();
 
         try {
+            
+            // Record the upload request for idempotency
+            uploadRequestRepository.save(new UploadRequest(idempotencyKey, documentId));
+
             // 1. Upload to MinIO
             logger.debug("Uploading file to MinIO: {}", objectName);
             minioClient.putObject(
@@ -95,15 +114,16 @@ public class DocumentService {
             producer.publishDocumentUploaded(event);
             logger.info("Document uploaded successfully: {} for user: {}", documentId, userId);
 
-            return new UploadDocResponse(
-                saved.getId(),
-                "UPLOADED",
-                "Document uploaded successfully"
-            );
+            return saved.getId();
 
         } catch (MinioException e) {
             logger.error("MinIO error during upload for document: {}", documentId, e);
             throw new DocumentServiceException("Failed to upload file to storage: " + e.getMessage(), e);
+        } catch (DataIntegrityViolationException e) {
+            return uploadRequestRepository
+                   .findById(idempotencyKey)
+                   .get()
+                   .getDocumentId();
         } catch (Exception e) {
             logger.error("Unexpected error during document upload: {}", documentId, e);
             throw new DocumentServiceException("Failed to upload document: " + e.getMessage(), e);
