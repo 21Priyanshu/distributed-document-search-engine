@@ -13,7 +13,7 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
-    private final String SECRET = "dummuy_secret_key_for_jwt_signing_purposes_only";
+    private final String SECRET = "my-super-secret-key-32-bytes-min";
 
     public String generateToken(String userId) {
         return Jwts.builder()

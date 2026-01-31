@@ -13,11 +13,12 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
-    private final String SECRET = "dummuy_secret_key_for_jwt_signing_purposes_only";
+    private final String SECRET = "my-super-secret-key-32-bytes-min";
 
     public String generateToken(String userId) {
         return Jwts.builder()
                 .setSubject(userId)
+                .claim("type", "user")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 day expiration
                 .signWith(getKey(), SignatureAlgorithm.HS256)

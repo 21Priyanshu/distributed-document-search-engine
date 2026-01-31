@@ -34,14 +34,16 @@ public class DocumentIndexConsumer {
     }
 
     // Main topic
-    @KafkaListener(topics = "document_uploaded", groupId = "search-indexer")
+    @KafkaListener(topics = "document_uploaded", containerFactory = "kafkaListenerContainerFactory")
     public void consume(DocumentUploadedEvent event, Acknowledgment ack) {
+        log.info("Received message from document_uploaded topic");
         handle(event, ack);
     }
 
     // Retry topic
-    @KafkaListener(topics = "document_uploaded_retry", groupId = "search-indexer")
+    @KafkaListener(topics = "document_uploaded_retry", containerFactory = "kafkaListenerContainerFactory")
     public void retry(DocumentUploadedEvent event, Acknowledgment ack) {
+        log.info("Received message from document_uploaded_retry topic");
         handle(event, ack);
     }
 
