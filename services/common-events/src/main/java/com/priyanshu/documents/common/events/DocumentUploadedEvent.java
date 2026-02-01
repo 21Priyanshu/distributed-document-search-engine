@@ -5,5 +5,6 @@ public record DocumentUploadedEvent(
         String storagePath,
         String title,
         String description,
-        String ownerId
+        String ownerId,
+        int retryCount
 ) {}

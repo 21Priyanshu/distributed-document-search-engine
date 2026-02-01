@@ -12,6 +12,7 @@ import com.priyanshu.documents.search_service.dto.SearchResponse;
 import com.priyanshu.documents.search_service.dto.SearchResultItem;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 
 @Service
 public class DocumentSearchService {
@@ -45,13 +46,13 @@ public class DocumentSearchService {
                                 )
                             )
                             .filter(f -> f
-                                .term(t -> t
-                                    .field("ownerId")
-                                    .value(userId)
-                                )
-                            )
+                                    .term(t -> t
+                                        .field("ownerId")
+                                        .value(userId)
+                                    )
+                    )
                         )
-                    ),
+                    ).sort(srt -> srt.field(f -> f.field("createdAt").order(SortOrder.Desc))),
                     Map.class
             );
 

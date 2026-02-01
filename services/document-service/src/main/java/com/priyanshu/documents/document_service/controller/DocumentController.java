@@ -1,6 +1,7 @@
 package com.priyanshu.documents.document_service.controller;
 
 import java.io.InputStream;
+import java.nio.file.AccessDeniedException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -15,10 +16,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,12 +56,17 @@ public class DocumentController {
 
     @PostMapping("/upload")
     public ResponseEntity<UploadDocResponse> upload(
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestParam @NotNull MultipartFile file,
             @RequestParam @NotBlank @Size(max = 255) String title,
             @RequestParam @NotBlank @Size(max = 1000) String description,
             @RequestParam(required = false) String tags,
             Authentication auth
     ) {
+        // Validate Idempotency Key
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency-Key header required");
+        }
         String userId = auth.getName();
         logger.info("Document upload request by user: {}, file: {}, size: {} bytes",
                    userId, file.getOriginalFilename(), file.getSize());
@@ -76,7 +84,14 @@ public class DocumentController {
                 throw new DocumentServiceException("File size exceeds maximum allowed limit of 50MB");
             }
 
-            UploadDocResponse response = service.upload(file, title, description, tagList, userId);
+            UUID documentId = service.upload(idempotencyKey, file, title, description, tagList, userId);
+
+            UploadDocResponse response = new UploadDocResponse(
+                documentId,
+                "UPLOADED",
+                "Document uploaded successfully"
+            );
+
             logger.info("Document uploaded successfully: {} by user: {}", response.getDocumentId(), userId);
 
             return ResponseEntity.ok(response);
@@ -173,6 +188,18 @@ public class DocumentController {
             logger.error("Failed to retrieve document: {} for user: {}", id, userId, e);
             throw new DocumentServiceException("Failed to retrieve document: " + e.getMessage(), e);
         }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDocument(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) throws AccessDeniedException {
+        String userId = authentication.getName();
+
+        service.deleteDocument(id, userId);
+
+        return ResponseEntity.noContent().build();
     }
 }
 
