@@ -115,6 +115,8 @@ public class DocumentService {
                 title,
                 description,
                 userId,
+                file.getSize(),
+                DocumentStatus.UPLOADED.name(),
                 0
             );
 

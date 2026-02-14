@@ -20,7 +20,7 @@ public class IndexInitializer {
 
     @PostConstruct
     public void createIndex() {
-        String indexName = "documents_index_v2";
+        String indexName = Constants.INDEX_NAME;
 
         try {
             boolean exists = client.indices().exists(e -> e.index(indexName)).value();

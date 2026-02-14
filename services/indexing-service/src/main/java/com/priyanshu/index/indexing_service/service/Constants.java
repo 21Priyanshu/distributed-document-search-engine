@@ -1,6 +1,8 @@
 package com.priyanshu.index.indexing_service.service;
 
 public class Constants {
+    public static final String INDEX_NAME = "documents_index_v3";
+
     public static final String INDEX_MAPPING_JSON = """
                     {
                     "settings": {
@@ -43,6 +45,8 @@ public class Constants {
                             "analyzer": "autocomplete_analyzer",
                             "search_analyzer": "search_analyzer"
                         },
+                        "fileSize": { "type": "long" },
+                        "status": { "type": "keyword" },
                         "tags": { "type": "keyword" },
                         "createdAt": { "type": "date" }
                         }
