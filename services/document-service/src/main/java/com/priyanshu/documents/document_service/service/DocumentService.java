@@ -275,6 +275,7 @@ public class DocumentService {
                         doc.getTitle(),
                         doc.getDescription(),
                         doc.getStatus().name(),
+                        doc.getFileSize(),
                         doc.getCreatedAt()
                 ));
     }

@@ -8,6 +8,7 @@ public record DocumentListItem(
     String title,
     String description,
     String status,
+    Long fileSize,
     Instant createdAt
 ) {
 
@@ -16,6 +17,7 @@ public record DocumentListItem(
        String title,
        String description,
        String status,
+       Long fileSize,
        Instant createdAt
    ) {
        this(
@@ -23,6 +25,7 @@ public record DocumentListItem(
            title,
            description,
            status,
+           fileSize,
            createdAt
        );
    } 
