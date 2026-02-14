@@ -3,7 +3,7 @@ package com.priyanshu.index.indexing_service.messaging;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.priyanshu.documents.DocumentDeletedEvent;
+import com.priyanshu.documents.common.events.DocumentDeletedEvent;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import lombok.extern.slf4j.Slf4j;

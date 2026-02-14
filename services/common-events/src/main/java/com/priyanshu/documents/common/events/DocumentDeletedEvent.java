@@ -1,4 +1,4 @@
-package com.priyanshu.documents;
+package com.priyanshu.documents.common.events;
 
 public record DocumentDeletedEvent(
     String documentId

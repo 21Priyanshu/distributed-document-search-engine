@@ -24,8 +24,8 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: com.priyanshu.documents.common.events
-        spring.json.type.mapping: DocumentUploadedEvent:com.priyanshu.documents.common.events.DocumentUploadedEvent
+        spring.json.trusted.packages: com.priyanshu.documents.common.events,com.priyanshu.documents
+        spring.json.type.mapping: DocumentUploadedEvent:com.priyanshu.documents.common.events.DocumentUploadedEvent,DocumentDeletedEvent:com.priyanshu.documents.common.events.DocumentDeletedEvent,com.priyanshu.documents.DocumentDeletedEvent:com.priyanshu.documents.common.events.DocumentDeletedEvent
     listener:
       ack-mode: manual
 

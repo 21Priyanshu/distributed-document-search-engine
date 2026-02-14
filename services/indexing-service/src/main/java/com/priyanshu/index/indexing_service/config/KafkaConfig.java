@@ -46,7 +46,8 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, DocumentUploadedEvent.class.getName());
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.priyanshu.documents.common.events");
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.priyanshu.documents.common.events,com.priyanshu.documents");
+        props.put(JsonDeserializer.TYPE_MAPPINGS, "com.priyanshu.documents.DocumentDeletedEvent:com.priyanshu.documents.common.events.DocumentDeletedEvent");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, true);
         return new DefaultKafkaConsumerFactory<>(props);
     }
