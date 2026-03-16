@@ -19,7 +19,7 @@ A scalable backend system that allows users to upload documents and perform fast
 - Search Service
 - Kafka, Redis, PostgreSQL, MinIO, Elasticsearch
 
-![HLD](docs/hld.png)
+    ![HLD](docs/hldUpdated.png)
 
 ## Tech Stack
 - Java 17 , Spring Boot
