@@ -78,6 +78,8 @@ public class DocumentIndexConsumer {
                     event.title(),
                     event.description(),
                     event.ownerId(),
+                    event.fileSize(),
+                    event.status(),
                     retries
             );
 
@@ -114,6 +116,8 @@ public class DocumentIndexConsumer {
                 event.description(),
                 content,
                 event.ownerId(),
+                event.fileSize(),
+                "READY",
                 Instant.now().toString()
         );
 

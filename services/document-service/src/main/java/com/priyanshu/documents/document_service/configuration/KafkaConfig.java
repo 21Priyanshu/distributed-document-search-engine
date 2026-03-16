@@ -10,8 +10,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import com.priyanshu.documents.DocumentDeletedEvent;
 import com.priyanshu.documents.common.events.DocumentUploadedEvent;
+import com.priyanshu.documents.common.events.DocumentDeletedEvent;
 
 import java.util.HashMap;
 import java.util.Map;

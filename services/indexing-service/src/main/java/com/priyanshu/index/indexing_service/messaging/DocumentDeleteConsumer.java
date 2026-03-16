@@ -3,7 +3,8 @@ package com.priyanshu.index.indexing_service.messaging;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.priyanshu.documents.DocumentDeletedEvent;
+import com.priyanshu.documents.common.events.DocumentDeletedEvent;
+import com.priyanshu.index.indexing_service.service.Constants;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ public class DocumentDeleteConsumer {
 
         try {
             client.delete(d -> d
-                .index("documents_index_v2")
+                .index(Constants.INDEX_NAME)
                 .id(event.documentId())
             );
 

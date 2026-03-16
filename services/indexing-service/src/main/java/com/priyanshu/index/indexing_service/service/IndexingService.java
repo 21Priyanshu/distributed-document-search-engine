@@ -92,7 +92,7 @@ public class IndexingService {
     public void indexDocument(String documentId, SearchDocument doc) throws IOException {
         try {
             client.index(i -> i
-                .index("documents_index_v2")
+                .index(Constants.INDEX_NAME)
                 .id(documentId)
                 .document(doc)
             );

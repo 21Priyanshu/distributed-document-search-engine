@@ -4,6 +4,8 @@ public record SearchResultItem(
     String documentId,
     String title,
     String description,
+    Long fileSize,
+    String status,
     String createdAt
 ) {
 

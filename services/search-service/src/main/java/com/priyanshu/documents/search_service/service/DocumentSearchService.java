@@ -34,7 +34,7 @@ public class DocumentSearchService {
         long startTime = System.nanoTime();
         try {
             var response = client.search(s -> s
-                    .index("documents_index_v2")
+                    .index("documents_index_v3")
                     .from(from)
                     .size(size)
                     .query(q -> q
@@ -66,6 +66,8 @@ public class DocumentSearchService {
                                 hit.id(),
                                 (String) src.get("title"),
                                 (String) src.get("description"),
+                                src.get("fileSize") instanceof Number n ? n.longValue() : null,
+                                (String) src.get("status"),
                                 String.valueOf(src.get("createdAt"))   // safer
                         );
                     })

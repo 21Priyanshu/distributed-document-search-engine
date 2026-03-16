@@ -10,9 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.priyanshu.documents.document_service.dto.DocumentListItem;
 import com.priyanshu.documents.document_service.entity.Document;
 import com.priyanshu.documents.document_service.entity.DocumentStatus;
 import com.priyanshu.documents.document_service.entity.UploadRequest;
@@ -110,6 +115,8 @@ public class DocumentService {
                 title,
                 description,
                 userId,
+                file.getSize(),
+                DocumentStatus.UPLOADED.name(),
                 0
             );
 
@@ -245,5 +252,35 @@ public class DocumentService {
         // 3. Publish Kafka event
         producer.publishDocumentDeleted(documentId.toString());
     }
+
+    public Page<DocumentListItem> listDocuments(
+            String ownerId,
+            int page,
+            int size,
+            String sort,
+            String order
+    ) {
+
+        Sort.Direction dir = order.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(dir, sort)
+        );
+
+        return repository.findByOwnerId(ownerId, pageable)
+                .map(doc -> new DocumentListItem(
+                        doc.getId(),
+                        doc.getTitle(),
+                        doc.getDescription(),
+                        doc.getStatus().name(),
+                        doc.getFileSize(),
+                        doc.getCreatedAt()
+                ));
+    }
+
 }
 
