@@ -2,7 +2,7 @@
 
 A scalable distributed system that enables users to upload, index, and perform fast, ranked full-text search on documents with metadata filtering.
 
-📺 Demo Video: <add-your-demo-link>
+📺 Demo Video: <https://www.youtube.com/watch?v=geLpQBqGX0U>
 
 ---
 
