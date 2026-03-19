@@ -1,17 +1,37 @@
 # Distributed Document Search Engine
 
-A scalable backend system that allows users to upload documents and perform fast, ranked full-text search with metadata filtering.
+A scalable distributed system that enables users to upload, index, and perform fast, ranked full-text search on documents with metadata filtering.
 
-## Features
+📺 Demo Video: <add-your-demo-link>
+
+---
+
+## 🔗 Project Structure
+
+This project is split into two repositories:
+
+- **Backend (Spring Boot + Kafka + Elasticsearch)**  
+  https://github.com/21Priyanshu/distributed-document-search-engine
+
+- **Frontend (React UI)**  
+  https://github.com/21Priyanshu/distributed-document-search-engine-ui
+
+---
+
+## ✨ Features
+
 - JWT-based authentication
-- Document upload and storage (MinIO)
-- Metadata storage (PostgreSQL)
-- Asynchronous indexing using Kafka
-- Full-text search using Elasticsearch
-- Redis-based caching for search queries
+- Document upload and storage using MinIO
+- Metadata storage in PostgreSQL
+- Asynchronous indexing with Kafka
+- Full-text search with Elasticsearch
+- Redis-based caching for faster queries
 - Pagination and filtering support
 
-## Architecture
+---
+
+## 🏗️ Architecture
+
 - API Gateway
 - Auth Service
 - Document Service
@@ -19,29 +39,100 @@ A scalable backend system that allows users to upload documents and perform fast
 - Search Service
 - Kafka, Redis, PostgreSQL, MinIO, Elasticsearch
 
-    ![HLD](docs/hldUpdated.png)
+![HLD](docs/hldUpdated.png)
 
-## Tech Stack
-- Java 17 , Spring Boot
+---
+
+## 🛠️ Tech Stack
+
+- Java 17, Spring Boot
 - PostgreSQL
 - MinIO
-- Kafka
-- ElasticSearch
+- Apache Kafka
+- Elasticsearch
 - Redis
 - Docker & Docker Compose
 
-## High Level Flow
+---
 
-### Uplodad flow
-User → API Gateway → Auth → Document Service → MinIO + PostgreSQL → Kafka → Indexing Service → Elasticsearch
+## 🔄 High-Level Flow
 
-### Search Flow
+### 📤 Upload Flow
+User → API Gateway → Auth Service → Document Service → MinIO + PostgreSQL → Kafka → Indexing Service → Elasticsearch
+
+### 🔍 Search Flow
 User → API Gateway → Search Service → Redis → Elasticsearch
 
-## Design Decisions
+---
 
-- Kafka used to decouple upload from indexing
-- Elasticsearch used for full-text search & ranking
-- Redis used for cache-aside pattern
-- MinIO used for scalable object storage
-- DLQ implemented to handle poison messages
+## ⚙️ Local Setup
+
+### Prerequisites
+
+- Java 17+
+- Docker & Docker Compose
+- Node.js (for frontend)
+
+---
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/21Priyanshu/distributed-document-search-engine
+cd distributed-document-search-engine 
+``` 
+
+### 2. Start infrastructurw
+
+```bash
+cd infra
+docker-compose up -d
+```
+This will start:
+
+- Kafka & Zookeeper
+
+- PostgreSQL
+
+- Redis
+
+- Elasticsearch
+
+- MinIO
+
+### 3. Run backend
+#### i. Build common events
+Change the diretory to common events 
+
+    cd services/common-events
+    mvn clean install
+
+
+#### ii. Run gateway
+    cd services/api-gateway
+
+    mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Duser.timezone=Asia/Kolkata"
+
+#### iiI. Run document service
+    cd services/document-service
+
+    mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Duser.timezone=Asia/Kolkata"
+
+#### iv. Run indexing service
+    cd services/indexing-service
+
+    mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Duser.timezone=Asia/Kolkata"
+
+#### v. Run search service
+    cd services/search-service
+    
+    mvn spring-boot:run
+
+### 4. Run frontend
+    git clone https://github.com/21Priyanshu/distributed-document-search-engine-ui
+
+    cd distributed-document-search-engine-ui
+
+    npm install
+
+    npm start
